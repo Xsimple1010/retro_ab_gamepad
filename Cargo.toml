@@ -1,0 +1,15 @@
+workspace = { members = ["example"] }
+[package]
+name = "retro_ab_gamepad"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gilrs = "0.10.5"
+retro_ab = { path = "../retro_ab" }
+
+[[example]]
+name = "example"
+path = "example/src/main.rs"
