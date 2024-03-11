@@ -8,7 +8,10 @@ edition = "2021"
 
 [dependencies]
 gilrs = "0.10.5"
-retro_ab = { path = "../retro_ab" }
+retro_ab = { git = "https://github.com/Xsimple1010/retro_ab_rs.git" }
+
+[dev-dependencies]
+retro_ab_av = { git = "https://github.com/Xsimple1010/retro_ab_av.git" }
 
 [[example]]
 name = "example"
