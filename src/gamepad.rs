@@ -23,15 +23,18 @@ pub fn input_poll_callback() {
 }
 
 pub fn input_state_callback(port: i16, _device: i16, _index: i16, id: i16) -> i16 {
-    //funciona muito bem em núcleos que nao usam BITMASKS
     for gamepad_info in &*GAMEPADS.lock().unwrap() {
         if gamepad_info.retro_port == port {
-            let pressed = gamepad_info.get_key_state(id);
+            if id as u32 != retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_MASK {
+                let pressed = gamepad_info.key_pressed(id);
 
-            if pressed {
-                return 1;
+                if pressed {
+                    return 1;
+                } else {
+                    return 0;
+                }
             } else {
-                return 0;
+                return gamepad_info.retro_bitmask() as i16;
             }
         }
     }

@@ -1,4 +1,4 @@
-use crate::key_map::{self, KeyMap};
+use crate::key_map::KeyMap;
 use gilrs::{GamepadId, Gilrs};
 
 #[derive(Debug, Clone)]
@@ -65,6 +65,24 @@ impl GamePadInfo {
         });
 
         key_map.push(KeyMap {
+            native: gilrs::Button::West,
+            retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_Y,
+            pressed: false,
+        });
+
+        key_map.push(KeyMap {
+            native: gilrs::Button::LeftThumb,
+            retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_L,
+            pressed: false,
+        });
+
+        key_map.push(KeyMap {
+            native: gilrs::Button::RightThumb,
+            retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_R,
+            pressed: false,
+        });
+
+        key_map.push(KeyMap {
             native: gilrs::Button::Start,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_START,
             pressed: false,
@@ -93,7 +111,7 @@ impl GamePadInfo {
         }
     }
 
-    pub fn get_key_state(&self, retro_id: i16) -> bool {
+    pub fn key_pressed(&self, retro_id: i16) -> bool {
         for key_map in &self.key_map {
             if key_map.retro as i16 == retro_id {
                 return key_map.pressed;
@@ -101,5 +119,16 @@ impl GamePadInfo {
         }
 
         false
+    }
+
+    pub fn retro_bitmask(&self) -> u32 {
+        let mut bitmask = 0;
+
+        for key in &self.key_map {
+            let pressed = if key.pressed { 1 } else { 0 };
+            bitmask = bitmask | pressed << key.retro;
+        }
+
+        bitmask
     }
 }
