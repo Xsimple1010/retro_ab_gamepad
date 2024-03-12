@@ -9,7 +9,7 @@ use retro_ab_av::{
     audio_sample_batch_callback, audio_sample_callback, context::RetroAvCtx,
     video_refresh_callback, Event, Keycode,
 };
-use retro_ab_gamepad::gamepad::{input_poll_callback, input_state_callback, GamePad};
+use retro_ab_gamepad::context::{input_poll_callback, input_state_callback, GamepadContext};
 use std::sync::Arc;
 
 fn main() {
@@ -27,10 +27,11 @@ fn main() {
     .expect("Erro ao tentar criar RetroContext");
 
     core::init(&core_ctx).expect("Erro ao tentar inicializar o contexto");
-    core::load_game(&core_ctx, "C:/WFL/roms/sno.sfc").expect("Erro ao tentar carrega a rom");
+    core::load_game(&core_ctx, "C:/WFL/roms/Mega Man X3 (USA).sfc")
+        .expect("Erro ao tentar carrega a rom");
 
-    let mut gamepad = GamePad::new(core_ctx.core.system.ports.lock().unwrap().len());
-    let gamepads = gamepad.search();
+    let mut gamepad_ctx = GamepadContext::new(core_ctx.core.system.ports.lock().unwrap().len());
+    let gamepads = gamepad_ctx.search();
 
     for gm in &*gamepads.lock().unwrap() {
         if gm.retro_port >= 0 {

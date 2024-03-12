@@ -2,6 +2,6 @@ extern crate gilrs;
 #[macro_use]
 extern crate lazy_static;
 
-pub mod gamepad;
-mod info;
+pub mod context;
 mod key_map;
+mod retro_gamepad;

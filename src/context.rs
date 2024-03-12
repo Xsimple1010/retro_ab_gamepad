@@ -1,4 +1,4 @@
-use crate::info::GamePadInfo;
+use crate::retro_gamepad::RetroGamePad;
 use gilrs::{Event, Gilrs};
 use std::{
     sync::{Arc, Mutex},
@@ -6,14 +6,19 @@ use std::{
 };
 
 lazy_static! {
-    static ref GAMEPADS: Arc<Mutex<Vec<GamePadInfo>>> = Arc::new(Mutex::new(Vec::new()));
+    static ref GAMEPADS: Arc<Mutex<Vec<RetroGamePad>>> = Arc::new(Mutex::new(Vec::new()));
     static ref GAMEPAD_INSTANCE: Mutex<Gilrs> = Mutex::new(Gilrs::new().unwrap());
 }
 
 pub fn input_poll_callback() {
     let gilrs: &mut Gilrs = &mut *GAMEPAD_INSTANCE.lock().unwrap();
 
-    while let Some(Event { id, event, time }) = gilrs.next_event() {
+    while let Some(Event {
+        id,
+        event: _,
+        time: _,
+    }) = gilrs.next_event()
+    {
         for gamepad_info in &mut *GAMEPADS.lock().unwrap() {
             if gamepad_info.id == id {
                 gamepad_info.pool(gilrs);
@@ -42,28 +47,33 @@ pub fn input_state_callback(port: i16, _device: i16, _index: i16, id: i16) -> i1
     0
 }
 
-pub struct GamePad {
+pub struct GamepadContext {
     max_ports: usize,
 }
 
-impl Drop for GamePad {
+impl Drop for GamepadContext {
     fn drop(&mut self) {
         GAMEPADS.lock().unwrap().clear();
     }
 }
 
-impl GamePad {
-    pub fn search(&mut self) -> Arc<Mutex<Vec<GamePadInfo>>> {
+impl GamepadContext {
+    pub fn search(&mut self) -> Arc<Mutex<Vec<RetroGamePad>>> {
         let start = Instant::now();
 
         let gilrs = &mut *GAMEPAD_INSTANCE.lock().unwrap();
 
         while !self.time_eq(start, 100) {
-            while let Some(Event { id, event, time }) = gilrs.next_event() {
+            while let Some(Event {
+                id,
+                event: _,
+                time: _,
+            }) = gilrs.next_event()
+            {
                 let retro_port = self.get_available_port();
 
                 if let Some(gamepad) = gilrs.connected_gamepad(id) {
-                    GAMEPADS.lock().unwrap().push(GamePadInfo::new(
+                    GAMEPADS.lock().unwrap().push(RetroGamePad::new(
                         id,
                         gamepad.name().to_string(),
                         retro_port,
@@ -101,7 +111,7 @@ impl GamePad {
         (Instant::now() - time).as_millis() == end
     }
 
-    pub fn new(max_ports: usize) -> GamePad {
+    pub fn new(max_ports: usize) -> GamepadContext {
         let _gilrs = GAMEPAD_INSTANCE.lock().unwrap();
         Self { max_ports }
     }

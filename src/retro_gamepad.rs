@@ -2,7 +2,7 @@ use crate::key_map::KeyMap;
 use gilrs::{GamepadId, Gilrs};
 
 #[derive(Debug, Clone)]
-pub struct GamePadInfo {
+pub struct RetroGamePad {
     pub id: GamepadId,
     pub name: String,
     #[doc = "indicar ao Core em qual porta o controle esta conectado, se o valor for -1 significa que todas as porta suportas pelo Core ja estão sendo usadas"]
@@ -12,8 +12,8 @@ pub struct GamePadInfo {
     pub key_map: Vec<KeyMap>,
 }
 
-impl GamePadInfo {
-    pub fn new(id: GamepadId, name: String, retro_port: i16, retro_type: u32) -> GamePadInfo {
+impl RetroGamePad {
+    pub fn new(id: GamepadId, name: String, retro_port: i16, retro_type: u32) -> RetroGamePad {
         let mut key_map: Vec<KeyMap> = Vec::new();
 
         key_map.push(KeyMap {
