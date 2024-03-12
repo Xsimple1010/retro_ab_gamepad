@@ -447,6 +447,7 @@ name = "retro_ab_gamepad"
 version = "0.1.0"
 dependencies = [
  "gilrs",
+ "lazy_static",
  "retro_ab",
  "retro_ab_av",
 ]
