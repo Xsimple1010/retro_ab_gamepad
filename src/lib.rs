@@ -3,5 +3,5 @@ extern crate gilrs;
 extern crate lazy_static;
 
 pub mod context;
-mod key_map;
-mod retro_gamepad;
+pub mod key_map;
+pub mod retro_gamepad;

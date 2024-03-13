@@ -1,5 +1,6 @@
 use crate::retro_gamepad::RetroGamePad;
 use gilrs::{Event, Gilrs};
+use retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_MASK;
 use std::{
     sync::{Arc, Mutex},
     time::Instant,
@@ -30,7 +31,7 @@ pub fn input_poll_callback() {
 pub fn input_state_callback(port: i16, _device: i16, _index: i16, id: i16) -> i16 {
     for gamepad_info in &*GAMEPADS.lock().unwrap() {
         if gamepad_info.retro_port == port {
-            if id as u32 != retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_MASK {
+            if id as u32 != RETRO_DEVICE_ID_JOYPAD_MASK {
                 let pressed = gamepad_info.key_pressed(id);
 
                 if pressed {
