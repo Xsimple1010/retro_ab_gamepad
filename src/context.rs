@@ -1,6 +1,6 @@
 use crate::retro_gamepad::RetroGamePad;
 use gilrs::{Event, Gilrs};
-use retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_MASK;
+use retro_ab::retro_sys::{retro_rumble_effect, RETRO_DEVICE_ID_JOYPAD_MASK};
 use std::{
     sync::{Arc, Mutex},
     time::Instant,
@@ -46,6 +46,18 @@ pub fn input_state_callback(port: i16, _device: i16, _index: i16, id: i16) -> i1
     }
 
     0
+}
+
+pub fn rumble_callback(
+    port: ::std::os::raw::c_uint,
+    effect: retro_rumble_effect,
+    strength: u16,
+) -> bool {
+    println!(
+        "port:{:?} effect:{:?} strength:{:?}",
+        port, effect, strength
+    );
+    true
 }
 
 pub struct GamepadContext {

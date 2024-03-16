@@ -9,7 +9,9 @@ use retro_ab_av::{
     audio_sample_batch_callback, audio_sample_callback, context::RetroAvCtx,
     video_refresh_callback, Event, Keycode,
 };
-use retro_ab_gamepad::context::{input_poll_callback, input_state_callback, GamepadContext};
+use retro_ab_gamepad::context::{
+    input_poll_callback, input_state_callback, rumble_callback, GamepadContext,
+};
 use std::sync::Arc;
 
 fn main() {
@@ -22,6 +24,7 @@ fn main() {
             input_poll_callback,
             input_state_callback,
             video_refresh_callback,
+            rumble_callback,
         },
     )
     .expect("Erro ao tentar criar RetroContext");
