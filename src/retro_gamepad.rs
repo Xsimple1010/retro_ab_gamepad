@@ -1,7 +1,7 @@
 use crate::key_map::KeyMap;
 use gilrs::{GamepadId, Gilrs};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RetroGamePad {
     pub id: GamepadId,
     pub name: String,

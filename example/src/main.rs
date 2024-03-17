@@ -33,8 +33,11 @@ fn main() {
     core::load_game(&core_ctx, "C:/WFL/roms/Mega Man X3 (USA).sfc")
         .expect("Erro ao tentar carrega a rom");
 
-    let mut gamepad_ctx = GamepadContext::new(core_ctx.core.system.ports.lock().unwrap().len());
-    let gamepads = gamepad_ctx.search();
+    let gamepad_ctx = GamepadContext::new();
+
+    let (mut av_ctx, mut event_pump) =
+        RetroAvCtx::new(Arc::clone(&core_ctx.core.av_info)).expect("erro");
+    let gamepads = gamepad_ctx.get_list();
 
     for gm in &*gamepads.lock().unwrap() {
         if gm.retro_port >= 0 {
@@ -42,9 +45,6 @@ fn main() {
             core::connect_controller(&core_ctx, gm.retro_port as u32, gm.retro_type);
         }
     }
-
-    let (mut av_ctx, mut event_pump) =
-        RetroAvCtx::new(Arc::clone(&core_ctx.core.av_info)).expect("erro");
 
     'running: loop {
         core::run(&core_ctx).expect("msg");

@@ -1,31 +1,51 @@
-use crate::retro_gamepad::RetroGamePad;
-use gilrs::{Event, Gilrs};
-use retro_ab::retro_sys::{retro_rumble_effect, RETRO_DEVICE_ID_JOYPAD_MASK};
-use std::{
-    sync::{Arc, Mutex},
-    time::Instant,
+use crate::{
+    handle_event::handle_gamepad_events, retro_gamepad::RetroGamePad,
+    thread_event::create_gamepad_thread,
 };
+use gilrs::Gilrs;
+use retro_ab::retro_sys::{retro_rumble_effect, RETRO_DEVICE_ID_JOYPAD_MASK};
+use std::sync::{Arc, Mutex};
 
 lazy_static! {
     static ref GAMEPADS: Arc<Mutex<Vec<RetroGamePad>>> = Arc::new(Mutex::new(Vec::new()));
-    static ref GAMEPAD_INSTANCE: Mutex<Gilrs> = Mutex::new(Gilrs::new().unwrap());
+    static ref GILRS_INSTANCE: Arc<Mutex<Gilrs>> = Arc::new(Mutex::new(Gilrs::new().unwrap()));
+    static ref MAX_PORTS: Arc<Mutex<usize>> = Arc::new(Mutex::new(2));
+}
+
+pub struct GamepadContext {
+    _is_running: Arc<Mutex<bool>>,
+}
+
+impl Drop for GamepadContext {
+    fn drop(&mut self) {
+        GAMEPADS.lock().unwrap().clear();
+        *self._is_running.lock().unwrap() = false;
+    }
+}
+
+impl GamepadContext {
+    pub fn get_list(&self) -> Arc<Mutex<Vec<RetroGamePad>>> {
+        GAMEPADS.clone()
+    }
+
+    pub fn new() -> GamepadContext {
+        let is_running = Arc::new(Mutex::new(true));
+
+        create_gamepad_thread(
+            GAMEPADS.clone(),
+            GILRS_INSTANCE.clone(),
+            is_running.clone(),
+            MAX_PORTS.clone(),
+        );
+
+        Self {
+            _is_running: is_running,
+        }
+    }
 }
 
 pub fn input_poll_callback() {
-    let gilrs: &mut Gilrs = &mut *GAMEPAD_INSTANCE.lock().unwrap();
-
-    while let Some(Event {
-        id,
-        event: _,
-        time: _,
-    }) = gilrs.next_event()
-    {
-        for gamepad_info in &mut *GAMEPADS.lock().unwrap() {
-            if gamepad_info.id == id {
-                gamepad_info.pool(gilrs);
-            }
-        }
-    }
+    handle_gamepad_events(GILRS_INSTANCE.clone(), GAMEPADS.clone(), MAX_PORTS.clone());
 }
 
 pub fn input_state_callback(port: i16, _device: i16, _index: i16, id: i16) -> i16 {
@@ -58,74 +78,4 @@ pub fn rumble_callback(
         port, effect, strength
     );
     true
-}
-
-pub struct GamepadContext {
-    max_ports: usize,
-}
-
-impl Drop for GamepadContext {
-    fn drop(&mut self) {
-        GAMEPADS.lock().unwrap().clear();
-    }
-}
-
-impl GamepadContext {
-    pub fn search(&mut self) -> Arc<Mutex<Vec<RetroGamePad>>> {
-        let start = Instant::now();
-
-        let gilrs = &mut *GAMEPAD_INSTANCE.lock().unwrap();
-
-        while !self.time_eq(start, 100) {
-            while let Some(Event {
-                id,
-                event: _,
-                time: _,
-            }) = gilrs.next_event()
-            {
-                let retro_port = self.get_available_port();
-
-                if let Some(gamepad) = gilrs.connected_gamepad(id) {
-                    GAMEPADS.lock().unwrap().push(RetroGamePad::new(
-                        id,
-                        gamepad.name().to_string(),
-                        retro_port,
-                        retro_ab::retro_sys::RETRO_DEVICE_JOYPAD,
-                    ));
-                }
-            }
-        }
-
-        GAMEPADS.clone()
-    }
-
-    fn get_available_port(&mut self) -> i16 {
-        GAMEPADS
-            .lock()
-            .unwrap()
-            .sort_by(|gmp, f_gmp| gmp.retro_port.cmp(&f_gmp.retro_port));
-
-        if let Some(gamepad) = GAMEPADS.lock().unwrap().last() {
-            let current_port = gamepad.retro_port + 1;
-
-            if current_port as usize > self.max_ports {
-                return -1;
-            }
-
-            return current_port;
-        }
-
-        0
-    }
-
-    pub fn vibrate(&self) {}
-
-    fn time_eq(&self, time: Instant, end: u128) -> bool {
-        (Instant::now() - time).as_millis() == end
-    }
-
-    pub fn new(max_ports: usize) -> GamepadContext {
-        let _gilrs = GAMEPAD_INSTANCE.lock().unwrap();
-        Self { max_ports }
-    }
 }
