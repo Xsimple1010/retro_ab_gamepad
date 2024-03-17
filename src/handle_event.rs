@@ -4,6 +4,8 @@ use gilrs::{Event, GamepadId, Gilrs};
 
 use crate::retro_gamepad::RetroGamePad;
 
+pub type GamepadStateListener = fn(GamePadState, RetroGamePad);
+
 fn get_available_port(max_ports: &Arc<Mutex<usize>>, gamepads: &mut Vec<RetroGamePad>) -> i16 {
     gamepads.sort_by(|gmp, f_gmp| gmp.retro_port.cmp(&f_gmp.retro_port));
 
@@ -44,19 +46,35 @@ fn try_push(
     Err(())
 }
 
-fn remove(id: GamepadId, gamepads: &Arc<Mutex<Vec<RetroGamePad>>>) {
+fn remove(id: GamepadId, gamepads: &Arc<Mutex<Vec<RetroGamePad>>>) -> Result<RetroGamePad, ()> {
     match gamepads.lock() {
         Ok(mut list) => {
+            let mut gm_list = list.clone();
+            gm_list.retain(|gm| gm.id == id);
+
             list.retain(|g| g.id != id);
+
+            if gm_list.is_empty() {
+                return Err(());
+            } else {
+                return Ok(gm_list.first().unwrap().to_owned());
+            }
         }
-        Err(..) => {}
+        Err(..) => Err(()),
     }
+}
+
+#[derive(Debug)]
+pub enum GamePadState {
+    Connected,
+    Disconnected,
 }
 
 pub fn handle_gamepad_events(
     gilrs_instance: Arc<Mutex<Gilrs>>,
     gamepads_list: Arc<Mutex<Vec<RetroGamePad>>>,
     max_ports: Arc<Mutex<usize>>,
+    listener: Arc<Mutex<GamepadStateListener>>,
 ) {
     let gilrs = &mut *gilrs_instance.lock().unwrap();
 
@@ -69,13 +87,31 @@ pub fn handle_gamepad_events(
                     max_ports.clone(),
                     gilrs,
                 );
+                println!("{:?}", GamePadState::Connected);
 
                 match result {
-                    Ok(..) => {}
+                    Ok(gm) => match listener.lock() {
+                        Ok(listeners) => listeners(GamePadState::Connected, gm),
+                        Err(..) => {}
+                    },
                     Err(..) => {}
                 }
             }
-            gilrs::EventType::Disconnected => remove(id, &gamepads_list),
+            gilrs::EventType::Disconnected => {
+                let result = remove(id, &gamepads_list);
+                println!("{:?}", GamePadState::Disconnected);
+
+                match result {
+                    Ok(gm) => match listener.lock() {
+                        Ok(listener) => listener(GamePadState::Disconnected, gm),
+                        Err(..) => {}
+                    },
+                    Err(..) => {}
+                }
+            }
+            gilrs::EventType::Dropped => {
+                println!("{:?}", GamePadState::Disconnected)
+            }
             _ => {}
         }
 

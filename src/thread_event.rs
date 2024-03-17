@@ -1,4 +1,7 @@
-use crate::{handle_event::handle_gamepad_events, retro_gamepad::RetroGamePad};
+use crate::{
+    handle_event::{handle_gamepad_events, GamepadStateListener},
+    retro_gamepad::RetroGamePad,
+};
 use gilrs::Gilrs;
 use std::{
     sync::{Arc, Mutex},
@@ -14,12 +17,14 @@ pub fn create_gamepad_thread(
     gilrs: Arc<Mutex<Gilrs>>,
     is_running: Arc<Mutex<bool>>,
     max_ports: Arc<Mutex<usize>>,
+    listener: Arc<Mutex<GamepadStateListener>>,
 ) {
     thread::spawn(move || {
         let gamepads_list_ptr = gamepads;
         let gilrs_instance_ptr = gilrs;
         let is_running_ptr = is_running;
         let max_ports_ptr = max_ports;
+        let listener_ptr = listener;
 
         while *is_running_ptr.lock().unwrap() {
             thread::sleep(Duration::from_millis(700));
@@ -27,6 +32,7 @@ pub fn create_gamepad_thread(
                 gilrs_instance_ptr.clone(),
                 gamepads_list_ptr.clone(),
                 max_ports_ptr.clone(),
+                listener_ptr.clone(),
             );
         }
     });

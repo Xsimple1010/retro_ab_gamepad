@@ -1,5 +1,6 @@
 use crate::{
-    handle_event::handle_gamepad_events, retro_gamepad::RetroGamePad,
+    handle_event::{handle_gamepad_events, GamePadState, GamepadStateListener},
+    retro_gamepad::RetroGamePad,
     thread_event::create_gamepad_thread,
 };
 use gilrs::Gilrs;
@@ -10,7 +11,10 @@ lazy_static! {
     static ref GAMEPADS: Arc<Mutex<Vec<RetroGamePad>>> = Arc::new(Mutex::new(Vec::new()));
     static ref GILRS_INSTANCE: Arc<Mutex<Gilrs>> = Arc::new(Mutex::new(Gilrs::new().unwrap()));
     static ref MAX_PORTS: Arc<Mutex<usize>> = Arc::new(Mutex::new(2));
+    static ref CALLBACK: Arc<Mutex<GamepadStateListener>> = Arc::new(Mutex::new(none));
 }
+
+fn none(_gs: GamePadState, _rg: RetroGamePad) {}
 
 pub struct GamepadContext {
     _is_running: Arc<Mutex<bool>>,
@@ -28,14 +32,19 @@ impl GamepadContext {
         GAMEPADS.clone()
     }
 
-    pub fn new() -> GamepadContext {
+    pub fn new(cb: Option<GamepadStateListener>) -> GamepadContext {
         let is_running = Arc::new(Mutex::new(true));
+
+        if let Some(cb) = cb {
+            *CALLBACK.lock().unwrap() = cb;
+        }
 
         create_gamepad_thread(
             GAMEPADS.clone(),
             GILRS_INSTANCE.clone(),
             is_running.clone(),
             MAX_PORTS.clone(),
+            CALLBACK.clone(),
         );
 
         Self {
@@ -45,7 +54,12 @@ impl GamepadContext {
 }
 
 pub fn input_poll_callback() {
-    handle_gamepad_events(GILRS_INSTANCE.clone(), GAMEPADS.clone(), MAX_PORTS.clone());
+    handle_gamepad_events(
+        GILRS_INSTANCE.clone(),
+        GAMEPADS.clone(),
+        MAX_PORTS.clone(),
+        CALLBACK.clone(),
+    );
 }
 
 pub fn input_state_callback(port: i16, _device: i16, _index: i16, id: i16) -> i16 {
