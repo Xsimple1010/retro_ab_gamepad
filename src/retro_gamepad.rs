@@ -65,12 +65,6 @@ impl RetroGamePad {
         });
 
         key_map.push(KeyMap {
-            native: gilrs::Button::West,
-            retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_Y,
-            pressed: false,
-        });
-
-        key_map.push(KeyMap {
             native: gilrs::Button::LeftThumb,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_L,
             pressed: false,
@@ -79,12 +73,6 @@ impl RetroGamePad {
         key_map.push(KeyMap {
             native: gilrs::Button::RightThumb,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_R,
-            pressed: false,
-        });
-
-        key_map.push(KeyMap {
-            native: gilrs::Button::Start,
-            retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_START,
             pressed: false,
         });
 
