@@ -45,7 +45,7 @@ impl GamepadContext {
             GAMEPADS.clone(),
             GILRS_INSTANCE.clone(),
             is_running.clone(),
-            is_running.clone(),
+            is_paused.clone(),
             MAX_PORTS.clone(),
             CALLBACK.clone(),
         );
