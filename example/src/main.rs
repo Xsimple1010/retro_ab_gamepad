@@ -26,6 +26,7 @@ fn state_listener(state: GamePadState, gamepad: RetroGamePad) {
             }
         },
         GamePadState::Disconnected => {}
+        GamePadState::ButtonPressed(b) => println!("{:?}", b),
     }
 }
 

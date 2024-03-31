@@ -1,8 +1,8 @@
 use std::sync::{Arc, Mutex};
 
-use gilrs::{Event, GamepadId, Gilrs};
+use gilrs::{Button, Event, GamepadId, Gilrs};
 
-use crate::retro_gamepad::RetroGamePad;
+use crate::{key_map::get_key_name_from_native_button, retro_gamepad::RetroGamePad};
 
 pub type GamepadStateListener = fn(GamePadState, RetroGamePad);
 
@@ -68,6 +68,7 @@ fn remove(id: GamepadId, gamepads: &Arc<Mutex<Vec<RetroGamePad>>>) -> Result<Ret
 pub enum GamePadState {
     Connected,
     Disconnected,
+    ButtonPressed(String),
 }
 
 pub fn handle_gamepad_events(
@@ -111,6 +112,23 @@ pub fn handle_gamepad_events(
             }
             gilrs::EventType::Dropped => {
                 println!("{:?}", GamePadState::Disconnected)
+            }
+            gilrs::EventType::ButtonPressed(button, _) => {
+                for gamepad_info in &mut *gamepads_list.lock().unwrap() {
+                    if gamepad_info.id == id {
+                        match listener.lock() {
+                            Ok(listener) => {
+                                listener(
+                                    GamePadState::ButtonPressed(
+                                        get_key_name_from_native_button(&button).to_owned(),
+                                    ),
+                                    gamepad_info.clone(),
+                                );
+                            }
+                            Err(..) => {}
+                        }
+                    }
+                }
             }
             _ => {}
         }
