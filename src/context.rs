@@ -18,6 +18,7 @@ fn none(_gs: GamePadState, _rg: RetroGamePad) {}
 
 pub struct GamepadContext {
     _is_running: Arc<Mutex<bool>>,
+    _paused: Arc<Mutex<bool>>,
 }
 
 impl Drop for GamepadContext {
@@ -34,6 +35,7 @@ impl GamepadContext {
 
     pub fn new(cb: Option<GamepadStateListener>) -> GamepadContext {
         let is_running = Arc::new(Mutex::new(true));
+        let is_paused = Arc::new(Mutex::new(false));
 
         if let Some(cb) = cb {
             *CALLBACK.lock().unwrap() = cb;
@@ -43,12 +45,32 @@ impl GamepadContext {
             GAMEPADS.clone(),
             GILRS_INSTANCE.clone(),
             is_running.clone(),
+            is_running.clone(),
             MAX_PORTS.clone(),
             CALLBACK.clone(),
         );
 
         Self {
             _is_running: is_running,
+            _paused: is_paused,
+        }
+    }
+
+    pub fn pause_thread_events(&mut self) {
+        match self._paused.lock() {
+            Ok(mut paused) => {
+                *paused = true;
+            }
+            Err(..) => {}
+        }
+    }
+
+    pub fn resume_thread_events(&mut self) {
+        match self._paused.lock() {
+            Ok(mut paused) => {
+                *paused = false;
+            }
+            Err(..) => {}
         }
     }
 }

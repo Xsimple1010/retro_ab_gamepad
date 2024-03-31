@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use gilrs::{Button, Event, GamepadId, Gilrs};
+use gilrs::{Event, GamepadId, Gilrs};
 
 use crate::{key_map::get_key_name_from_native_button, retro_gamepad::RetroGamePad};
 
