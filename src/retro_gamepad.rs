@@ -3,7 +3,9 @@ use gilrs::{GamepadId, Gilrs};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RetroGamePad {
+    #[doc = "identificação do gamepad fornecida pelo crate gilrs"]
     pub id: GamepadId,
+    #[doc = "nome do gamepad"]
     pub name: String,
     #[doc = "indicar ao Core em qual porta o controle esta conectado, se o valor for -1 significa que todas as porta suportas pelo Core ja estão sendo usadas"]
     pub retro_port: i16,

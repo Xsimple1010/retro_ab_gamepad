@@ -88,7 +88,6 @@ pub fn handle_gamepad_events(
                     max_ports.clone(),
                     gilrs,
                 );
-                println!("{:?}", GamePadState::Connected);
 
                 match result {
                     Ok(gm) => match listener.lock() {
@@ -100,7 +99,6 @@ pub fn handle_gamepad_events(
             }
             gilrs::EventType::Disconnected => {
                 let result = remove(id, &gamepads_list);
-                println!("{:?}", GamePadState::Disconnected);
 
                 match result {
                     Ok(gm) => match listener.lock() {
@@ -109,9 +107,6 @@ pub fn handle_gamepad_events(
                     },
                     Err(..) => {}
                 }
-            }
-            gilrs::EventType::Dropped => {
-                println!("{:?}", GamePadState::Disconnected)
             }
             gilrs::EventType::ButtonPressed(button, _) => {
                 for gamepad_info in &mut *gamepads_list.lock().unwrap() {

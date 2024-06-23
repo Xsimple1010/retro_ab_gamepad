@@ -14,15 +14,16 @@ use retro_ab_gamepad::{
     retro_gamepad::RetroGamePad,
     GamePadState,
 };
-use std::sync::Arc;
+use std::{ptr::addr_of, sync::Arc};
 
 static mut CORE_CTX: Option<Arc<RetroContext>> = None;
 
 fn state_listener(state: GamePadState, gamepad: RetroGamePad) {
     match state {
         GamePadState::Connected => unsafe {
-            if let Some(ctx) = &CORE_CTX {
-                core::connect_controller(ctx, gamepad.retro_port as u32, gamepad.retro_type);
+            if let Some(ctx) = &*addr_of!(CORE_CTX) {
+                let _ =
+                    core::connect_controller(ctx, gamepad.retro_port as u32, gamepad.retro_type);
             }
         },
         GamePadState::Disconnected => {}
@@ -32,7 +33,7 @@ fn state_listener(state: GamePadState, gamepad: RetroGamePad) {
 
 fn main() {
     let core_ctx = core::load(
-        "C:/WFL/cores/test.dll",
+        "./cores/snes9x_libretro.dll",
         test_tools::paths::get_paths(),
         RetroEnvCallbacks {
             audio_sample_batch_callback,
@@ -48,9 +49,9 @@ fn main() {
     unsafe {
         CORE_CTX = Some(core_ctx);
 
-        if let Some(core_ctx) = &CORE_CTX {
+        if let Some(core_ctx) = &*addr_of!(CORE_CTX) {
             core::init(&core_ctx).expect("Erro ao tentar inicializar o contexto");
-            core::load_game(&core_ctx, "C:/WFL/roms/Street Fighter II Turbo (USA).sfc")
+            core::load_game(&core_ctx, "./roms/Mega Man X (E).smc")
                 .expect("Erro ao tentar carrega a rom");
 
             let _gamepad_ctx = GamepadContext::new(Some(state_listener));
@@ -73,8 +74,7 @@ fn main() {
                     }
                 }
             }
+            let _ = core::de_init(core_ctx.to_owned());
         }
     }
-
-    // retro_ab_av::de_init(av_ctx);
 }

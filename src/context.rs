@@ -29,10 +29,6 @@ impl Drop for GamepadContext {
 }
 
 impl GamepadContext {
-    pub fn get_list(&self) -> Arc<Mutex<Vec<RetroGamePad>>> {
-        GAMEPADS.clone()
-    }
-
     pub fn new(cb: Option<GamepadStateListener>) -> GamepadContext {
         let is_running = Arc::new(Mutex::new(true));
         let is_paused = Arc::new(Mutex::new(false));
@@ -56,6 +52,12 @@ impl GamepadContext {
         }
     }
 
+    #[doc = "retorna uma lista de gamepad disponíveis"]
+    pub fn get_list(&self) -> Arc<Mutex<Vec<RetroGamePad>>> {
+        GAMEPADS.clone()
+    }
+
+    #[doc = "Para que o CORE possa 'tomar posse' com existo dos eventos do gamepad é necessário pausar o a thread de eventos"]
     pub fn pause_thread_events(&mut self) {
         match self._paused.lock() {
             Ok(mut paused) => {
@@ -65,6 +67,7 @@ impl GamepadContext {
         }
     }
 
+    #[doc = "Devolve a 'posse' dos eventos do gamepad dada ao CORE para a thread de eventos. chame isso quando nao houve nenhuma rom em execução"]
     pub fn resume_thread_events(&mut self) {
         match self._paused.lock() {
             Ok(mut paused) => {
@@ -75,6 +78,7 @@ impl GamepadContext {
     }
 }
 
+//***********ENVIE ESSAS CALLBACKS PARA CORE****************/
 pub fn input_poll_callback() {
     handle_gamepad_events(
         GILRS_INSTANCE.clone(),
@@ -115,3 +119,4 @@ pub fn rumble_callback(
     );
     true
 }
+//****************************************************/
