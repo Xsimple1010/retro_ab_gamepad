@@ -21,6 +21,7 @@ static mut CORE_CTX: Option<Arc<RetroContext>> = None;
 fn state_listener(state: GamePadState, gamepad: RetroGamePad) {
     match state {
         GamePadState::Connected => unsafe {
+            println!("{:?}", gamepad.name);
             if let Some(ctx) = &*addr_of!(CORE_CTX) {
                 let _ =
                     core::connect_controller(ctx, gamepad.retro_port as u32, gamepad.retro_type);
@@ -54,7 +55,9 @@ fn main() {
             core::load_game(&core_ctx, "./roms/Mega Man X (E).smc")
                 .expect("Erro ao tentar carrega a rom");
 
-            let _gamepad_ctx = GamepadContext::new(Some(state_listener));
+            let mut gamepad_ctx = GamepadContext::new(Some(state_listener));
+
+            gamepad_ctx.pause_thread_events();
 
             let (mut av_ctx, mut event_pump) =
                 RetroAvCtx::new(Arc::clone(&core_ctx.core.av_info)).expect("erro");
@@ -74,6 +77,8 @@ fn main() {
                     }
                 }
             }
+
+            gamepad_ctx.resume_thread_events();
             let _ = core::de_init(core_ctx.to_owned());
         }
     }
