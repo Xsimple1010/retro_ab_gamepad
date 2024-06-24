@@ -8,7 +8,7 @@ edition = "2021"
 
 [dependencies]
 gilrs = "0.10.7"
-lazy_static = "1.5.0"
+lazy_static = "1.4.0"
 retro_ab = { git = "https://github.com/Xsimple1010/retro_ab_rs.git" }
 
 [dev-dependencies]
