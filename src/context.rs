@@ -18,7 +18,6 @@ fn none(_gs: GamePadState, _rg: RetroGamePad) {}
 
 pub struct GamepadContext {
     _is_running: Arc<Mutex<bool>>,
-    _paused: Arc<Mutex<bool>>,
 }
 
 impl Drop for GamepadContext {
@@ -31,7 +30,6 @@ impl Drop for GamepadContext {
 impl GamepadContext {
     pub fn new(cb: Option<GamepadStateListener>) -> GamepadContext {
         let is_running = Arc::new(Mutex::new(true));
-        let is_paused = Arc::new(Mutex::new(false));
 
         if let Some(cb) = cb {
             *CALLBACK.lock().unwrap() = cb;
@@ -41,14 +39,12 @@ impl GamepadContext {
             GAMEPADS.clone(),
             GILRS_INSTANCE.clone(),
             is_running.clone(),
-            is_paused.clone(),
             MAX_PORTS.clone(),
             CALLBACK.clone(),
         );
 
         Self {
             _is_running: is_running,
-            _paused: is_paused,
         }
     }
 
@@ -57,11 +53,11 @@ impl GamepadContext {
         GAMEPADS.clone()
     }
 
-    #[doc = "Para que o CORE possa 'tomar posse' com existo dos eventos do gamepad é necessário pausar o a thread de eventos"]
-    pub fn pause_thread_events(&mut self) {
-        match self._paused.lock() {
-            Ok(mut paused) => {
-                *paused = true;
+    #[doc = "Para que o CORE possa 'tomar posse' com existo dos eventos do gamepad é necessário interromper o a thread de eventos"]
+    pub fn stop_thread_events(&mut self) {
+        match self._is_running.lock() {
+            Ok(mut is_running) => {
+                *is_running = false;
             }
             Err(..) => {}
         }
@@ -69,9 +65,17 @@ impl GamepadContext {
 
     #[doc = "Devolve a 'posse' dos eventos do gamepad dada ao CORE para a thread de eventos. chame isso quando nao houve nenhuma rom em execução"]
     pub fn resume_thread_events(&mut self) {
-        match self._paused.lock() {
-            Ok(mut paused) => {
-                *paused = false;
+        match self._is_running.lock() {
+            Ok(is_running) => {
+                if *is_running == false {
+                    create_gamepad_thread(
+                        GAMEPADS.clone(),
+                        GILRS_INSTANCE.clone(),
+                        self._is_running.clone(),
+                        MAX_PORTS.clone(),
+                        CALLBACK.clone(),
+                    );
+                }
             }
             Err(..) => {}
         }

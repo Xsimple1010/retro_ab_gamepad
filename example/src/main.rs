@@ -57,7 +57,7 @@ fn main() {
 
             let mut gamepad_ctx = GamepadContext::new(Some(state_listener));
 
-            gamepad_ctx.pause_thread_events();
+            gamepad_ctx.stop_thread_events();
 
             let (mut av_ctx, mut event_pump) =
                 RetroAvCtx::new(Arc::clone(&core_ctx.core.av_info)).expect("erro");

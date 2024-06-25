@@ -15,7 +15,6 @@ pub fn create_gamepad_thread(
     gamepads: Arc<Mutex<Vec<RetroGamePad>>>,
     gilrs: Arc<Mutex<Gilrs>>,
     is_running: Arc<Mutex<bool>>,
-    is_paused: Arc<Mutex<bool>>,
     max_ports: Arc<Mutex<usize>>,
     listener: Arc<Mutex<GamepadStateListener>>,
 ) {
@@ -27,19 +26,12 @@ pub fn create_gamepad_thread(
         let listener_ptr = listener;
 
         while *is_running_ptr.lock().unwrap() {
-            match is_paused.try_lock() {
-                Ok(paused) => {
-                    if !*paused {
-                        handle_gamepad_events(
-                            gilrs_instance_ptr.clone(),
-                            gamepads_list_ptr.clone(),
-                            max_ports_ptr.clone(),
-                            listener_ptr.clone(),
-                        );
-                    }
-                }
-                Err(..) => {}
-            }
+            handle_gamepad_events(
+                gilrs_instance_ptr.clone(),
+                gamepads_list_ptr.clone(),
+                max_ports_ptr.clone(),
+                listener_ptr.clone(),
+            );
         }
     });
 }
