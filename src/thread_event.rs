@@ -14,18 +14,18 @@ use std::{
 pub fn create_gamepad_thread(
     gamepads: Arc<Mutex<Vec<RetroGamePad>>>,
     gilrs: Arc<Mutex<Gilrs>>,
-    is_running: Arc<Mutex<bool>>,
+    event_thread_is_enabled: Arc<Mutex<bool>>,
     max_ports: Arc<Mutex<usize>>,
     listener: Arc<Mutex<GamepadStateListener>>,
 ) {
     thread::spawn(move || {
         let gamepads_list_ptr = gamepads;
         let gilrs_instance_ptr = gilrs;
-        let is_running_ptr = is_running;
+        let event_thread_is_enabled_ptr = event_thread_is_enabled;
         let max_ports_ptr = max_ports;
         let listener_ptr = listener;
 
-        while *is_running_ptr.lock().unwrap() {
+        while *event_thread_is_enabled_ptr.lock().unwrap() {
             handle_gamepad_events(
                 gilrs_instance_ptr.clone(),
                 gamepads_list_ptr.clone(),
