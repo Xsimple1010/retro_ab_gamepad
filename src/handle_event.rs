@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use gilrs::{Event, GamepadId, Gilrs};
 
-use crate::{key_map::get_key_name_from_native_button, retro_gamepad::RetroGamePad};
+use crate::{key_map::KeyMap, retro_gamepad::RetroGamePad};
 
 pub type GamepadStateListener = fn(GamePadState, RetroGamePad);
 
@@ -115,7 +115,7 @@ pub fn handle_gamepad_events(
                             Ok(listener) => {
                                 listener(
                                     GamePadState::ButtonPressed(
-                                        get_key_name_from_native_button(&button).to_owned(),
+                                        KeyMap::get_key_name_from_native_button(&button).to_owned(),
                                     ),
                                     gamepad_info.clone(),
                                 );
