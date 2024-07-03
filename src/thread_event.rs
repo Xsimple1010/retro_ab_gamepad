@@ -5,7 +5,8 @@ use crate::{
 use gilrs::Gilrs;
 use std::{
     sync::{Arc, Mutex},
-    thread,
+    thread::{self, sleep},
+    time::Duration,
 };
 
 /// a thread deve espera por um dado momento antes de tentar ler o proximo evento.
@@ -26,6 +27,10 @@ pub fn create_gamepad_thread(
         let listener_ptr = listener;
 
         while *event_thread_is_enabled_ptr.lock().unwrap() {
+            //sem isso há um grande consumo de cpu
+            //provavelmente vou precisar pausar essa thread de acordo com a taxa de atualização do monitor, tipo um vsync.
+            sleep(Duration::from_millis(16));
+
             handle_gamepad_events(
                 gilrs_instance_ptr.clone(),
                 gamepads_list_ptr.clone(),
