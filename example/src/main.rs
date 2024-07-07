@@ -51,8 +51,8 @@ fn main() {
         CORE_CTX = Some(core_ctx);
 
         if let Some(core_ctx) = &*addr_of!(CORE_CTX) {
-            core::init(&core_ctx).expect("Erro ao tentar inicializar o contexto");
-            core::load_game(&core_ctx, "./roms/Mega Man X (E).smc")
+            core::init(core_ctx).expect("Erro ao tentar inicializar o contexto");
+            core::load_game(core_ctx, "./roms/Mega Man X (E).smc")
                 .expect("Erro ao tentar carrega a rom");
 
             let mut gamepad_ctx = GamepadContext::new(Some(state_listener));
@@ -63,7 +63,7 @@ fn main() {
                 RetroAvCtx::new(Arc::clone(&core_ctx.core.av_info)).expect("erro");
 
             'running: loop {
-                core::run(&core_ctx).expect("msg");
+                core::run(core_ctx).expect("msg");
                 av_ctx.get_new_frame().expect("");
 
                 for event in event_pump.poll_iter() {
