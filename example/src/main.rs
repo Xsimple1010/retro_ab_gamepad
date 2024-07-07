@@ -78,7 +78,7 @@ fn main() {
                 }
             }
 
-            gamepad_ctx.resume_thread_events();
+            let _ = gamepad_ctx.resume_thread_events();
             let _ = core::de_init(core_ctx.to_owned());
         }
     }

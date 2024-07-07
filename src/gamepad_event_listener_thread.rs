@@ -8,7 +8,7 @@ use std::{
     thread::{self, sleep},
     time::Duration,
 };
-
+use crate::constants::GAMEPAD_EVENT_THREAD_SLEEP_TIME;
 
 /// # gamepad event listener thread
 ///
@@ -27,9 +27,13 @@ pub fn create_gamepad_listener_thread(
     listener: Arc<Mutex<GamepadStateListener>>,
 ) {
     thread::spawn(move || {
-        while *event_thread_is_enabled.lock().unwrap() {
-            //sem isso há um grande consumo de cpu
-            sleep(Duration::from_millis(16));
+        while *event_thread_is_enabled.lock().unwrap_or_else(|poison| {
+            let mut can_run = poison.into_inner();
+            *can_run = false;
+            can_run
+        }) {
+            //WITHOUT THIS, WI HAVE A HIGH CPU UTILIZATION!
+            sleep(Duration::from_millis(GAMEPAD_EVENT_THREAD_SLEEP_TIME));
 
             gamepad_events_handle(
                 gilrs.clone(),
