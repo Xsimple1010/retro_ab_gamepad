@@ -6,7 +6,7 @@ use crate::{key_map::KeyMap, retro_gamepad::RetroGamePad};
 
 pub type GamepadStateListener = fn(GamePadState, RetroGamePad);
 
-fn get_available_port(max_ports: &Arc<Mutex<usize>>, gamepads: &mut Vec<RetroGamePad>) -> i16 {
+fn get_available_port(max_ports: &Arc<Mutex<usize>>, gamepads: &mut [RetroGamePad]) -> i16 {
     gamepads.sort_by(|gmp, f_gmp| gmp.retro_port.cmp(&f_gmp.retro_port));
 
     if let Some(gamepad) = gamepads.last() {
@@ -54,10 +54,10 @@ fn remove(id: GamepadId, gamepads: &Arc<Mutex<Vec<RetroGamePad>>>) -> Result<Ret
 
             list.retain(|g| g.id != id);
 
-            if gm_list.is_empty() {
-                return Err(());
+            return if gm_list.is_empty() {
+                Err(())
             } else {
-                return Ok(gm_list.first().unwrap().to_owned());
+                Ok(gm_list.first().unwrap().to_owned())
             }
         }
         Err(..) => Err(()),
@@ -71,9 +71,9 @@ pub enum GamePadState {
     ButtonPressed(String),
 }
 
-pub fn handle_gamepad_events(
+pub fn gamepad_events_handle(
     gilrs_instance: Arc<Mutex<Gilrs>>,
-    gamepads_list: Arc<Mutex<Vec<RetroGamePad>>>,
+    gamepad_list: Arc<Mutex<Vec<RetroGamePad>>>,
     max_ports: Arc<Mutex<usize>>,
     listener: Arc<Mutex<GamepadStateListener>>,
 ) {
@@ -83,22 +83,20 @@ pub fn handle_gamepad_events(
         match event {
             gilrs::EventType::Connected => {
                 let result = try_push(
-                    id.clone(),
-                    &mut gamepads_list.lock().unwrap(),
+                    id,
+                    &mut gamepad_list.lock().unwrap(),
                     max_ports.clone(),
                     gilrs,
                 );
 
-                match result {
-                    Ok(gm) => match listener.lock() {
-                        Ok(listeners) => listeners(GamePadState::Connected, gm),
-                        Err(..) => {}
-                    },
-                    Err(..) => {}
+                if let Ok(gm) = result {
+                   if let Ok(listener)  =listener.lock() {
+                       listener(GamePadState::Connected, gm)
+                   }
                 }
             }
             gilrs::EventType::Disconnected => {
-                let result = remove(id, &gamepads_list);
+                let result = remove(id, &gamepad_list);
 
                 match result {
                     Ok(gm) => match listener.lock() {
@@ -109,7 +107,7 @@ pub fn handle_gamepad_events(
                 }
             }
             gilrs::EventType::ButtonPressed(button, _) => {
-                for gamepad_info in &mut *gamepads_list.lock().unwrap() {
+                for gamepad_info in &mut *gamepad_list.lock().unwrap() {
                     if gamepad_info.id == id {
                         match listener.lock() {
                             Ok(listener) => {
@@ -128,7 +126,7 @@ pub fn handle_gamepad_events(
             _ => {}
         }
 
-        for gamepad_info in &mut *gamepads_list.lock().unwrap() {
+        for gamepad_info in &mut *gamepad_list.lock().unwrap() {
             if gamepad_info.id == id {
                 gamepad_info.pool(gilrs);
             }

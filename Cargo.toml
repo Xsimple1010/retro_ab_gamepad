@@ -7,8 +7,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-gilrs = "0.10.7"
-lazy_static = "1.4.0"
+gilrs = "0.10.8"
+lazy_static = "1.5.0"
 retro_ab = { git = "https://github.com/Xsimple1010/retro_ab_rs.git" }
 
 [dev-dependencies]

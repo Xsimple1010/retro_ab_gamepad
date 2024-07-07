@@ -1,5 +1,6 @@
-use crate::key_map::KeyMap;
 use gilrs::{GamepadId, Gilrs};
+
+use crate::key_map::KeyMap;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RetroGamePad {
@@ -16,73 +17,51 @@ pub struct RetroGamePad {
 
 impl RetroGamePad {
     pub fn new(id: GamepadId, name: String, retro_port: i16, retro_type: u32) -> RetroGamePad {
-        let mut key_map: Vec<KeyMap> = Vec::new();
-
-        key_map.push(KeyMap {
+        let key_map: Vec<KeyMap> = vec![KeyMap {
             native: gilrs::Button::DPadDown,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_DOWN,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::DPadLeft,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_LEFT,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::DPadUp,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_UP,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::DPadRight,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_RIGHT,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::South,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_B,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::East,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_A,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::North,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_X,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::West,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_Y,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::LeftThumb,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_L,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::RightThumb,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_R,
             pressed: false,
-        });
-
-        key_map.push(KeyMap {
+        }, KeyMap {
             native: gilrs::Button::Start,
             retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_START,
             pressed: false,
-        });
+        }];
 
         Self {
             id,
@@ -116,7 +95,7 @@ impl RetroGamePad {
 
         for key in &self.key_map {
             let pressed = if key.pressed { 1 } else { 0 };
-            bitmask = bitmask | pressed << key.retro;
+            bitmask += pressed << key.retro;
         }
 
         bitmask

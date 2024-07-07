@@ -3,7 +3,7 @@ extern crate gilrs;
 extern crate lazy_static;
 
 mod handle_event;
-mod thread_event;
+mod gamepad_event_listener_thread;
 
 pub use handle_event::{GamePadState, GamepadStateListener};
 pub mod context;

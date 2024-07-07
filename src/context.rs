@@ -1,7 +1,7 @@
 use crate::{
-    handle_event::{handle_gamepad_events, GamePadState, GamepadStateListener},
+    handle_event::{gamepad_events_handle, GamePadState, GamepadStateListener},
     retro_gamepad::RetroGamePad,
-    thread_event::create_gamepad_thread,
+    gamepad_event_listener_thread::create_gamepad_listener_thread,
 };
 use gilrs::Gilrs;
 use retro_ab::retro_sys::{retro_rumble_effect, RETRO_DEVICE_ID_JOYPAD_MASK};
@@ -35,7 +35,7 @@ impl GamepadContext {
             *CALLBACK.lock().unwrap() = cb;
         }
 
-        create_gamepad_thread(
+        create_gamepad_listener_thread(
             GAMEPADS.clone(),
             GILRS_INSTANCE.clone(),
             event_thread_is_enabled.clone(),
@@ -67,14 +67,14 @@ impl GamepadContext {
     pub fn resume_thread_events(&mut self) {
         match self.event_thread_is_enabled.lock() {
             Ok(mut event_thread_is_enabled) => {
-                if *event_thread_is_enabled == false {
+                if !(*event_thread_is_enabled) {
                     *event_thread_is_enabled = true;
                 }
             }
             Err(..) => {}
         }
 
-        create_gamepad_thread(
+        create_gamepad_listener_thread(
             GAMEPADS.clone(),
             GILRS_INSTANCE.clone(),
             self.event_thread_is_enabled.clone(),
@@ -86,7 +86,7 @@ impl GamepadContext {
 
 //***********ENVIE ESSAS CALLBACKS PARA CORE****************/
 pub fn input_poll_callback() {
-    handle_gamepad_events(
+    gamepad_events_handle(
         GILRS_INSTANCE.clone(),
         GAMEPADS.clone(),
         MAX_PORTS.clone(),
@@ -97,16 +97,16 @@ pub fn input_poll_callback() {
 pub fn input_state_callback(port: i16, _device: i16, _index: i16, id: i16) -> i16 {
     for gamepad_info in &*GAMEPADS.lock().unwrap() {
         if gamepad_info.retro_port == port {
-            if id as u32 != RETRO_DEVICE_ID_JOYPAD_MASK {
+            return if id as u32 != RETRO_DEVICE_ID_JOYPAD_MASK {
                 let pressed = gamepad_info.key_pressed(id);
 
                 if pressed {
-                    return 1;
+                    1
                 } else {
-                    return 0;
+                    0
                 }
             } else {
-                return gamepad_info.retro_bitmask() as i16;
+                gamepad_info.retro_bitmask() as i16
             }
         }
     }
