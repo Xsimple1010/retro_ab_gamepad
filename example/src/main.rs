@@ -2,7 +2,7 @@ extern crate retro_ab;
 extern crate retro_ab_av;
 extern crate retro_ab_gamepad;
 use retro_ab::{
-    core::{self, RetroContext, RetroEnvCallbacks},
+    core::{RetroEnvCallbacks},
     test_tools,
 };
 use retro_ab_av::{
@@ -15,6 +15,7 @@ use retro_ab_gamepad::{
     GamePadState,
 };
 use std::{ptr::addr_of, sync::Arc};
+use retro_ab::retro_context::RetroContext;
 
 static mut CORE_CTX: Option<Arc<RetroContext>> = None;
 
@@ -24,7 +25,7 @@ fn state_listener(state: GamePadState, gamepad: RetroGamePad) {
             println!("{:?}", gamepad.name);
             if let Some(ctx) = &*addr_of!(CORE_CTX) {
                 let _ =
-                    core::connect_controller(ctx, gamepad.retro_port as u32, gamepad.retro_type);
+                    ctx.core.connect_controller(gamepad.retro_port as u32, gamepad.retro_type);
             }
         },
         GamePadState::Disconnected => {}
@@ -33,9 +34,9 @@ fn state_listener(state: GamePadState, gamepad: RetroGamePad) {
 }
 
 fn main() {
-    let core_ctx = core::load(
+    let core_ctx = RetroContext::new(
         "./cores/snes9x_libretro.dll",
-        test_tools::paths::get_paths(),
+        test_tools::paths::get_paths().unwrap(),
         RetroEnvCallbacks {
             audio_sample_batch_callback,
             audio_sample_callback,
@@ -45,14 +46,13 @@ fn main() {
             rumble_callback,
         },
     )
-    .expect("Erro ao tentar criar RetroContext");
+        .expect("Erro ao tentar criar RetroContext");
 
     unsafe {
         CORE_CTX = Some(core_ctx);
 
         if let Some(core_ctx) = &*addr_of!(CORE_CTX) {
-            core::init(core_ctx).expect("Erro ao tentar inicializar o contexto");
-            core::load_game(core_ctx, "./roms/Mega Man X (E).smc")
+            core_ctx.core.load_game("./roms/Mega Man X (E).smc")
                 .expect("Erro ao tentar carrega a rom");
 
             let mut gamepad_ctx = GamepadContext::new(Some(state_listener));
@@ -63,8 +63,10 @@ fn main() {
                 RetroAvCtx::new(Arc::clone(&core_ctx.core.av_info)).expect("erro");
 
             'running: loop {
-                core::run(core_ctx).expect("msg");
-                av_ctx.get_new_frame().expect("");
+                if av_ctx.sync() {
+                    core_ctx.core.run().expect("msg");
+                    av_ctx.get_new_frame();
+                }
 
                 for event in event_pump.poll_iter() {
                     match event {
@@ -79,7 +81,7 @@ fn main() {
             }
 
             let _ = gamepad_ctx.resume_thread_events();
-            let _ = core::de_init(core_ctx.to_owned());
+            let _ = core_ctx.core.de_init();
         }
     }
 }
