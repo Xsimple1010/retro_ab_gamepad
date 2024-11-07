@@ -1,41 +1,36 @@
 extern crate retro_ab;
 extern crate retro_ab_av;
 extern crate retro_ab_gamepad;
-use retro_ab::{
-    core::{RetroEnvCallbacks},
-    test_tools,
-};
+use retro_ab::retro_context::RetroContext;
+use retro_ab::{core::RetroEnvCallbacks, test_tools};
 use retro_ab_av::{
     audio_sample_batch_callback, audio_sample_callback, context::RetroAvCtx,
     video_refresh_callback, Event, Keycode,
 };
-use retro_ab_gamepad::{
-    context::{input_poll_callback, input_state_callback, rumble_callback, GamepadContext},
-    retro_gamepad::RetroGamePad,
-    GamePadState,
-};
+use retro_ab_gamepad::{input_poll_callback, input_state_callback, rumble_callback};
+use retro_ab_gamepad::{Device, DeviceState, RetroAbController};
 use std::{ptr::addr_of, sync::Arc};
-use retro_ab::retro_context::RetroContext;
 
 static mut CORE_CTX: Option<Arc<RetroContext>> = None;
 
-fn state_listener(state: GamePadState, gamepad: RetroGamePad) {
+fn state_listener(state: DeviceState, device: Device) {
     match state {
-        GamePadState::Connected => unsafe {
-            println!("{:?}", gamepad.name);
+        DeviceState::Connected => unsafe {
+            println!("{:?}", device.name);
             if let Some(ctx) = &*addr_of!(CORE_CTX) {
-                let _ =
-                    ctx.core.connect_controller(gamepad.retro_port as u32, gamepad.retro_type);
+                let _ = ctx
+                    .core
+                    .connect_controller(device.retro_port as u32, device.retro_type);
             }
         },
-        GamePadState::Disconnected => {}
-        GamePadState::ButtonPressed(b) => println!("{:?}", b),
+        DeviceState::Disconnected => {}
+        DeviceState::ButtonPressed(b) => println!("{:?}", b),
     }
 }
 
 fn main() {
     let core_ctx = RetroContext::new(
-        "./cores/snes9x_libretro.dll",
+        "C:/projetos/retro_ab_gamepad/cores/test.dll",
         test_tools::paths::get_paths().unwrap(),
         RetroEnvCallbacks {
             audio_sample_batch_callback,
@@ -46,16 +41,18 @@ fn main() {
             rumble_callback,
         },
     )
-        .expect("Erro ao tentar criar RetroContext");
+    .expect("Erro ao tentar criar RetroContext");
 
     unsafe {
         CORE_CTX = Some(core_ctx);
 
         if let Some(core_ctx) = &*addr_of!(CORE_CTX) {
-            core_ctx.core.load_game("./roms/Mega Man X (E).smc")
+            core_ctx
+                .core
+                .load_game("C:/projetos/retro_ab_gamepad/roms/Mega Man X (E).smc")
                 .expect("Erro ao tentar carrega a rom");
 
-            let mut gamepad_ctx = GamepadContext::new(Some(state_listener));
+            let mut gamepad_ctx = RetroAbController::new(Some(state_listener)).unwrap();
 
             gamepad_ctx.stop_thread_events();
 

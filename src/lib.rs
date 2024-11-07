@@ -2,11 +2,13 @@ extern crate gilrs;
 #[macro_use]
 extern crate lazy_static;
 
-mod handle_event;
-mod gamepad_event_listener_thread;
-
-pub use handle_event::{GamePadState, GamepadStateListener};
-pub mod context;
-pub mod key_map;
-pub mod retro_gamepad;
 mod constants;
+mod devices_manager;
+mod gamepad;
+mod retro_ab_controller;
+mod state_thread;
+
+pub use devices_manager::{Device, DeviceState};
+pub use retro_ab_controller::{
+    input_poll_callback, input_state_callback, rumble_callback, RetroAbController,
+};

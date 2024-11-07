@@ -2,13 +2,13 @@ use gilrs::Button;
 use retro_ab::retro_sys;
 
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct KeyMap {
+pub struct GamepadKeyMap {
     pub native: Button,
     pub retro: u32,
     pub pressed: bool,
 }
 
-impl KeyMap {
+impl GamepadKeyMap {
     pub fn get_key_name_from_retro_button<'a>(retro: u32) -> &'a str {
         match retro {
             //DPads

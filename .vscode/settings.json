@@ -4,6 +4,8 @@
         "gamepad",
         "gamepads",
         "gilrs",
-        "JOYPAD"
+        "JOYPAD",
+        "uuid",
+        "Uuid"
     ]
 }
