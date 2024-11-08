@@ -11,11 +11,13 @@ pub enum DeviceState {
     ButtonPressed(String),
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum DeviceType {
     Gamepad,
     Keyboard,
 }
 
+#[derive(Debug, Clone)]
 pub struct Device {
     pub id: Uuid,
     pub name: String,
@@ -38,6 +40,7 @@ impl Device {
 
 pub type DeviceStateListener = fn(DeviceState, Device);
 
+#[derive(Debug, Clone)]
 pub struct DevicesManager {
     gilrs_instance: Arc<Mutex<Gilrs>>,
     pub gamepad_list: Arc<Mutex<Vec<RetroGamePad>>>,
