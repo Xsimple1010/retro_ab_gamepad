@@ -7,8 +7,9 @@ use retro_ab_av::{
     audio_sample_batch_callback, audio_sample_callback, context::RetroAvCtx,
     video_refresh_callback, Event, Keycode,
 };
+use retro_ab_gamepad::devices_manager::{Device, DeviceState};
+use retro_ab_gamepad::RetroAbController;
 use retro_ab_gamepad::{input_poll_callback, input_state_callback, rumble_callback};
-use retro_ab_gamepad::{Device, DeviceState, RetroAbController};
 use std::{ptr::addr_of, sync::Arc};
 
 static mut CORE_CTX: Option<Arc<RetroContext>> = None;
@@ -16,15 +17,15 @@ static mut CORE_CTX: Option<Arc<RetroContext>> = None;
 fn state_listener(state: DeviceState, device: Device) {
     match state {
         DeviceState::Connected => unsafe {
-            println!("{:?}", device.name);
+            println!("Connected -> {:?}", device.name);
             if let Some(ctx) = &*addr_of!(CORE_CTX) {
                 let _ = ctx
                     .core
                     .connect_controller(device.retro_port as u32, device.retro_type);
             }
         },
-        DeviceState::Disconnected => {}
-        DeviceState::ButtonPressed(b) => println!("{:?}", b),
+        DeviceState::Disconnected => println!("Disconnected -> {:?}", device.name),
+        DeviceState::ButtonPressed(b) => println!("ButtonPressed -> {:?}", b),
     }
 }
 

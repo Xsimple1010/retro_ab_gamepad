@@ -1,4 +1,4 @@
-use crate::gamepad::{retro_gamepad::RetroGamePad, update_gamepad_state::gamepad_events_handle};
+use crate::{constants::DEFAULT_MAX_PORT, gamepad::retro_gamepad::RetroGamePad};
 use gilrs::Gilrs;
 use retro_ab::retro_sys::{retro_rumble_effect, RETRO_DEVICE_ID_JOYPAD_MASK};
 use std::sync::{Arc, Mutex};
@@ -43,7 +43,7 @@ pub type DeviceStateListener = fn(DeviceState, Device);
 #[derive(Debug, Clone)]
 pub struct DevicesManager {
     gilrs_instance: Arc<Mutex<Gilrs>>,
-    pub gamepad_list: Arc<Mutex<Vec<RetroGamePad>>>,
+    pub connected_gamepads: Arc<Mutex<Vec<RetroGamePad>>>,
     max_ports: Arc<Mutex<usize>>,
     listener: Option<Arc<Mutex<DeviceStateListener>>>,
 }
@@ -52,8 +52,8 @@ impl DevicesManager {
     pub fn new(listener: Option<Arc<Mutex<DeviceStateListener>>>) -> Self {
         Self {
             gilrs_instance: Arc::new(Mutex::new(Gilrs::new().unwrap())),
-            gamepad_list: Arc::new(Mutex::new(Vec::new())),
-            max_ports: Arc::new(Mutex::new(2)),
+            connected_gamepads: Arc::new(Mutex::new(Vec::new())),
+            max_ports: Arc::new(Mutex::new(DEFAULT_MAX_PORT)),
             listener,
         }
     }
@@ -63,27 +63,25 @@ impl DevicesManager {
     }
 
     pub fn update_state(&mut self) {
-        gamepad_events_handle(
+        RetroGamePad::update(
             &mut self.gilrs_instance,
-            &self.gamepad_list,
+            &self.connected_gamepads,
             &self.max_ports,
             &self.listener,
         );
     }
 
-    pub fn input_state_callback(&self, port: i16, id: i16) -> i16 {
-        for gamepad in &*self.gamepad_list.lock().unwrap() {
-            if gamepad.retro_port == port {
-                return if id as u32 != RETRO_DEVICE_ID_JOYPAD_MASK {
-                    let pressed = gamepad.key_pressed(id);
+    pub fn set_max_port(&self, max_port: usize) {
+        *self.max_ports.lock().unwrap() = max_port;
+    }
 
-                    if pressed {
-                        1
-                    } else {
-                        0
-                    }
+    pub fn get_input_state(&self, port: i16, key_id: i16) -> i16 {
+        for gamepad in &*self.connected_gamepads.lock().unwrap() {
+            if gamepad.retro_port == port {
+                return if key_id as u32 != RETRO_DEVICE_ID_JOYPAD_MASK {
+                    gamepad.get_key_pressed(key_id)
                 } else {
-                    gamepad.retro_bitmask() as i16
+                    gamepad.get_key_bitmask()
                 };
             }
         }
@@ -106,7 +104,8 @@ impl DevicesManager {
 }
 
 pub trait DevicesRequireFunctions {
-    fn key_pressed(&self, retro_id: i16) -> bool;
+    #[doc = "deve retornar 1 se estive pressionado e 0 se nao estive"]
+    fn get_key_pressed(&self, key_id: i16) -> i16;
 
-    fn retro_bitmask(&self) -> u32;
+    fn get_key_bitmask(&self) -> i16;
 }

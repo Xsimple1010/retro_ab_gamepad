@@ -1,22 +1,25 @@
 use super::{gamepad_key_map::GamepadKeyMap, retro_gamepad::RetroGamePad};
 use crate::devices_manager::{Device, DeviceState, DeviceStateListener};
-use gilrs::{Button, Event, GamepadId, Gilrs};
+use gilrs::{Button, GamepadId, Gilrs};
 use retro_ab::retro_sys::RETRO_DEVICE_JOYPAD;
 use std::sync::{Arc, Mutex};
 
+//se o valor retornado for -1 significa que todas as portas suportas pelo Core ja estão sendo usadas
 fn get_available_port(
     max_ports: &Arc<Mutex<usize>>,
-    gamepads: &Arc<Mutex<Vec<RetroGamePad>>>,
+    connected_gamepads: &Arc<Mutex<Vec<RetroGamePad>>>,
 ) -> i16 {
-    let mut gamepads = gamepads.lock().unwrap();
+    let invalid_port = -1;
 
-    gamepads.sort_by(|gmp, f_gmp| gmp.retro_port.cmp(&f_gmp.retro_port));
+    let mut connected_gamepads = connected_gamepads.lock().unwrap();
 
-    if let Some(gamepad) = gamepads.last() {
+    connected_gamepads.sort_by(|gmp, f_gmp| gmp.retro_port.cmp(&f_gmp.retro_port));
+
+    if let Some(gamepad) = connected_gamepads.last() {
         let current_port = gamepad.retro_port + 1;
 
         if current_port as usize > *max_ports.lock().unwrap() {
-            return -1;
+            return invalid_port;
         }
 
         return current_port;
@@ -25,8 +28,11 @@ fn get_available_port(
     0
 }
 
-fn remove(id: GamepadId, gamepads: &Arc<Mutex<Vec<RetroGamePad>>>) -> Result<RetroGamePad, ()> {
-    if let Ok(list) = &mut gamepads.lock() {
+pub fn remove(
+    id: GamepadId,
+    connected_gamepads: &Arc<Mutex<Vec<RetroGamePad>>>,
+) -> Result<RetroGamePad, ()> {
+    if let Ok(list) = &mut connected_gamepads.lock() {
         let mut gm_list = list.clone();
         gm_list.retain(|gm| gm.inner_id == id);
 
@@ -45,12 +51,12 @@ fn remove(id: GamepadId, gamepads: &Arc<Mutex<Vec<RetroGamePad>>>) -> Result<Ret
 pub fn connect_handle(
     gamepad_id: GamepadId,
     gilrs: &mut Gilrs,
-    gamepad_list: &Arc<Mutex<Vec<RetroGamePad>>>,
+    connected_gamepads: &Arc<Mutex<Vec<RetroGamePad>>>,
     max_ports: &Arc<Mutex<usize>>,
     listener: &Option<Arc<Mutex<DeviceStateListener>>>,
 ) {
     if let Some(gamepad) = gilrs.connected_gamepad(gamepad_id) {
-        let port = get_available_port(&max_ports, &gamepad_list);
+        let port = get_available_port(&max_ports, &connected_gamepads);
 
         let gamepad = RetroGamePad::new(
             gamepad_id,
@@ -59,7 +65,7 @@ pub fn connect_handle(
             RETRO_DEVICE_JOYPAD,
         );
 
-        let mut gamepads = gamepad_list.lock().unwrap();
+        let mut gamepads = connected_gamepads.lock().unwrap();
         gamepads.push(gamepad.clone());
 
         if let Some(listener) = listener {
@@ -69,12 +75,12 @@ pub fn connect_handle(
     }
 }
 
-fn disconnect_handle(
+pub fn disconnect_handle(
     id: GamepadId,
-    gamepad_list: &Arc<Mutex<Vec<RetroGamePad>>>,
+    connected_gamepads: &Arc<Mutex<Vec<RetroGamePad>>>,
     listener: &Option<Arc<Mutex<DeviceStateListener>>>,
 ) {
-    if let Ok(gamepad) = remove(id, &gamepad_list) {
+    if let Ok(gamepad) = remove(id, &connected_gamepads) {
         if let Some(listener) = listener {
             let listener = listener.lock().unwrap();
             listener(DeviceState::Disconnected, Device::from_gamepad(&gamepad));
@@ -82,13 +88,13 @@ fn disconnect_handle(
     }
 }
 
-fn pressed_button_handle(
+pub fn pressed_button_handle(
     button: &Button,
     gamepad_id: GamepadId,
-    gamepad_list: &Arc<Mutex<Vec<RetroGamePad>>>,
+    connected_gamepads: &Arc<Mutex<Vec<RetroGamePad>>>,
     listener: &Option<Arc<Mutex<DeviceStateListener>>>,
 ) {
-    for gamepad in &mut *gamepad_list.lock().unwrap() {
+    for gamepad in &mut *connected_gamepads.lock().unwrap() {
         if gamepad.inner_id != gamepad_id {
             return;
         }
@@ -102,37 +108,6 @@ fn pressed_button_handle(
                 ),
                 Device::from_gamepad(&gamepad),
             );
-        }
-    }
-}
-
-pub fn gamepad_events_handle(
-    gilrs_instance: &Arc<Mutex<Gilrs>>,
-    gamepad_list: &Arc<Mutex<Vec<RetroGamePad>>>,
-    max_ports: &Arc<Mutex<usize>>,
-    listener: &Option<Arc<Mutex<DeviceStateListener>>>,
-) {
-    let gilrs = &mut *gilrs_instance.lock().unwrap();
-
-    while let Some(Event {
-        id, event, time: _, ..
-    }) = gilrs.next_event()
-    {
-        match event {
-            gilrs::EventType::Connected => {
-                connect_handle(id, gilrs, &gamepad_list, &max_ports, &listener);
-            }
-            gilrs::EventType::Disconnected => disconnect_handle(id, &gamepad_list, &listener),
-            gilrs::EventType::ButtonPressed(button, _) => {
-                pressed_button_handle(&button, id, &gamepad_list, &listener)
-            }
-            _ => {}
-        }
-
-        for gamepad_info in &mut *gamepad_list.lock().unwrap() {
-            if gamepad_info.inner_id == id {
-                gamepad_info.pool(&gilrs);
-            }
         }
     }
 }

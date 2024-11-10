@@ -8,6 +8,7 @@ use std::{
     time::Duration,
 };
 
+#[derive(Debug)]
 pub struct EventThread {
     event_thread_can_run: Arc<Mutex<bool>>,
 }

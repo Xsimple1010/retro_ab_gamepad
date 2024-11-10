@@ -1,7 +1,7 @@
 use gilrs::Button;
 use retro_ab::retro_sys;
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GamepadKeyMap {
     pub native: Button,
     pub retro: u32,
@@ -9,6 +9,66 @@ pub struct GamepadKeyMap {
 }
 
 impl GamepadKeyMap {
+    pub fn get_default_key_maps() -> Vec<GamepadKeyMap> {
+        vec![
+            GamepadKeyMap {
+                native: gilrs::Button::DPadDown,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_DOWN,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::DPadLeft,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_LEFT,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::DPadUp,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_UP,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::DPadRight,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_RIGHT,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::South,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_B,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::East,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_A,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::North,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_X,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::West,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_Y,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::LeftThumb,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_L,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::RightThumb,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_R,
+                pressed: false,
+            },
+            GamepadKeyMap {
+                native: gilrs::Button::Start,
+                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_START,
+                pressed: false,
+            },
+        ]
+    }
+
     pub fn get_key_name_from_retro_button<'a>(retro: u32) -> &'a str {
         match retro {
             //DPads

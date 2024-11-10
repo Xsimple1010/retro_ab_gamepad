@@ -1,6 +1,11 @@
-use super::gamepad_key_map::GamepadKeyMap;
-use crate::devices_manager::DevicesRequireFunctions;
-use gilrs::{GamepadId, Gilrs};
+use std::sync::{Arc, Mutex};
+
+use super::{
+    gamepad_key_map::GamepadKeyMap,
+    update_gamepad_state_handle::{connect_handle, disconnect_handle, pressed_button_handle},
+};
+use crate::devices_manager::{DeviceStateListener, DevicesRequireFunctions};
+use gilrs::{Event, GamepadId, Gilrs};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -24,95 +29,70 @@ impl RetroGamePad {
         retro_port: i16,
         retro_type: u32,
     ) -> RetroGamePad {
-        let key_map: Vec<GamepadKeyMap> = vec![
-            GamepadKeyMap {
-                native: gilrs::Button::DPadDown,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_DOWN,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::DPadLeft,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_LEFT,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::DPadUp,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_UP,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::DPadRight,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_RIGHT,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::South,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_B,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::East,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_A,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::North,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_X,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::West,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_Y,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::LeftThumb,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_L,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::RightThumb,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_R,
-                pressed: false,
-            },
-            GamepadKeyMap {
-                native: gilrs::Button::Start,
-                retro: retro_ab::retro_sys::RETRO_DEVICE_ID_JOYPAD_START,
-                pressed: false,
-            },
-        ];
-
         Self {
             id: Uuid::new_v4(),
             inner_id,
             name,
             retro_port,
             retro_type,
-            key_map,
+            key_map: GamepadKeyMap::get_default_key_maps(),
         }
     }
 
-    pub fn pool(&mut self, gilrs: &Gilrs) {
+    fn update_key_pressed(&mut self, gilrs: &Gilrs) {
         let gamepad = gilrs.gamepad(self.inner_id);
 
         for key_info in &mut self.key_map {
             key_info.pressed = gamepad.is_pressed(key_info.native);
         }
     }
+
+    pub fn update(
+        gilrs_instance: &Arc<Mutex<Gilrs>>,
+        connected_gamepads: &Arc<Mutex<Vec<RetroGamePad>>>,
+        max_ports: &Arc<Mutex<usize>>,
+        listener: &Option<Arc<Mutex<DeviceStateListener>>>,
+    ) {
+        let gilrs = &mut *gilrs_instance.lock().unwrap();
+
+        while let Some(Event {
+            id, event, time: _, ..
+        }) = gilrs.next_event()
+        {
+            match event {
+                gilrs::EventType::Connected => {
+                    connect_handle(id, gilrs, &connected_gamepads, &max_ports, &listener);
+                }
+                gilrs::EventType::Disconnected => {
+                    disconnect_handle(id, &connected_gamepads, &listener)
+                }
+                gilrs::EventType::ButtonPressed(button, _) => {
+                    pressed_button_handle(&button, id, &connected_gamepads, &listener)
+                }
+                _ => {}
+            }
+
+            for gamepad_info in &mut *connected_gamepads.lock().unwrap() {
+                if gamepad_info.inner_id == id {
+                    gamepad_info.update_key_pressed(&gilrs);
+                }
+            }
+        }
+    }
 }
 
 impl DevicesRequireFunctions for RetroGamePad {
-    fn key_pressed(&self, retro_id: i16) -> bool {
+    fn get_key_pressed(&self, key_id: i16) -> i16 {
         for key_map in &self.key_map {
-            if key_map.retro as i16 == retro_id {
-                return key_map.pressed;
+            if key_map.retro as i16 == key_id {
+                return if key_map.pressed { 1 } else { 0 };
             }
         }
 
-        false
+        0
     }
 
-    fn retro_bitmask(&self) -> u32 {
+    fn get_key_bitmask(&self) -> i16 {
         let mut bitmask = 0;
 
         for key in &self.key_map {

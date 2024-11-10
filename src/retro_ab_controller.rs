@@ -9,6 +9,7 @@ lazy_static! {
         Arc::new(Mutex::new(DevicesManager::new(None)));
 }
 
+#[derive(Debug)]
 pub struct RetroAbController {
     event_thread: EventThread,
 }
@@ -55,10 +56,7 @@ pub fn input_poll_callback() {
 }
 
 pub fn input_state_callback(port: i16, _device: i16, _index: i16, id: i16) -> i16 {
-    DEVICES_MANAGER
-        .lock()
-        .unwrap()
-        .input_state_callback(port, id)
+    DEVICES_MANAGER.lock().unwrap().get_input_state(port, id)
 }
 
 pub fn rumble_callback(
