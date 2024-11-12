@@ -32,6 +32,19 @@ impl EventThread {
     }
 
     pub fn resume(&mut self, devices: Arc<Mutex<DevicesManager>>) -> Result<(), ErroHandle> {
+        let event_thread_can_run = *self.event_thread_can_run.lock().unwrap_or_else(|op| {
+            let mut _is_enable = op.into_inner();
+            *_is_enable = false;
+            _is_enable
+        });
+
+        if event_thread_can_run {
+            return Err(ErroHandle {
+                level: retro_log_level::RETRO_LOG_WARN,
+                message: "A thread de eventos já está em execução".to_string(),
+            });
+        }
+
         if let Err(_need_try_again) = self.try_enable_thread() {
             if self.try_enable_thread().is_err() {
                 return Err(ErroHandle {
