@@ -1,5 +1,5 @@
-use retro_ab::erro_handle::ErroHandle;
 use retro_ab::erro_handle::RetroLogLevel::RETRO_LOG_ERROR;
+use retro_ab::{erro_handle::ErroHandle, retro_sys::retro_log_level};
 
 use crate::{constants::EVENT_THREAD_SLEEP_TIME, devices_manager::DevicesManager};
 use std::{
@@ -89,11 +89,11 @@ impl EventThread {
         Ok(())
     }
 
-    /// # gamepad event listener thread
+    /// # event listener thread
     ///
-    /// Isso é util se quando não há uma *rom* em execução, mas ainda é necessário ouvir os eventos do
-    /// gamepad. Por exemplo, a *rom* foi fechada, mas a interface do usuário ainda precisa ser
-    /// notificada sobre os eventos do gamepad.
+    /// Isso é util se quando não há uma *rom* em execução, mas ainda é necessário ouvir os eventos de
+    /// input. Por exemplo, a *rom* foi fechada, mas a interface do usuário ainda precisa ser
+    /// notificada sobre os eventos de input.
     ///
     /// Aviso: para evitar uso desnecessário de CPU use isso somente quando não hover uma
     /// *rom* em execução!. Use o terceiro parâmetro "event_thread_is_enabled" para encerar a
