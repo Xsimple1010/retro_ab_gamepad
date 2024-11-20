@@ -12,12 +12,19 @@ pub enum DeviceState {
 }
 
 #[derive(Debug, Clone, Copy)]
+pub struct DeviceRubble {
+    pub port: usize,
+    pub effect: retro_rumble_effect,
+    pub strength: u16,
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub enum DeviceType {
     Gamepad,
     Keyboard,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 pub struct Device {
     pub id: Uuid,
     pub name: String,
@@ -25,6 +32,13 @@ pub struct Device {
     pub retro_type: u32,
     pub device_type: DeviceType,
 }
+
+impl PartialEq for Device {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
 
 impl Device {
     pub fn from_gamepad(gamepad: &RetroGamePad) -> Self {
@@ -75,6 +89,17 @@ impl DevicesManager {
         *self.max_ports.lock().unwrap() = max_port;
     }
 
+    pub fn get_gamepads(&self) -> Vec<RetroGamePad> {
+        let gamepads = self.connected_gamepads.lock().unwrap_or_else(|op| {
+            let mut gamepads = op.into_inner();
+            //TODO: o correto seria colocar uma lista verdadeira de gamepads aqui!
+            *gamepads = Vec::new();
+            gamepads
+        });
+
+        gamepads.clone()
+    }
+
     pub fn get_input_state(&self, port: i16, key_id: i16) -> i16 {
         for gamepad in &*self.connected_gamepads.lock().unwrap() {
             if gamepad.retro_port == port {
@@ -89,16 +114,8 @@ impl DevicesManager {
         0
     }
 
-    pub fn apply_rumble(
-        &self,
-        port: std::os::raw::c_uint,
-        effect: retro_rumble_effect,
-        strength: u16,
-    ) -> bool {
-        println!(
-            "port:{:?} effect:{:?} strength:{:?}",
-            port, effect, strength
-        );
+    pub fn apply_rumble(&self, rubble: DeviceRubble) -> bool {
+        println!("{:?}", rubble);
         true
     }
 }

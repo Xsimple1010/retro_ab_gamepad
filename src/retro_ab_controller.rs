@@ -1,4 +1,5 @@
-use crate::devices_manager::{DeviceStateListener, DevicesManager};
+use crate::devices_manager::{DeviceRubble, DeviceStateListener, DevicesManager};
+use crate::gamepad::retro_gamepad::RetroGamePad;
 use crate::state_thread::EventThread;
 use retro_ab::erro_handle::ErroHandle;
 use retro_ab::retro_sys::retro_rumble_effect;
@@ -48,6 +49,10 @@ impl RetroAbController {
     pub fn resume_thread_events(&mut self) -> Result<(), ErroHandle> {
         self.event_thread.resume(DEVICES_MANAGER.clone())
     }
+
+    pub fn apply_rumble(&self, rubble: DeviceRubble) {
+        DEVICES_MANAGER.lock().unwrap().apply_rumble(rubble);
+    }
 }
 
 //***********ENVIE ESSAS CALLBACKS PARA CORE****************/
@@ -64,9 +69,10 @@ pub fn rumble_callback(
     effect: retro_rumble_effect,
     strength: u16,
 ) -> bool {
-    DEVICES_MANAGER
-        .lock()
-        .unwrap()
-        .apply_rumble(port, effect, strength)
+    DEVICES_MANAGER.lock().unwrap().apply_rumble(DeviceRubble {
+        port: port as usize,
+        effect,
+        strength,
+    })
 }
 //****************************************************/
