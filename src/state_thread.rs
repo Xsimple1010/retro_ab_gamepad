@@ -81,7 +81,7 @@ impl EventThread {
         }
 
         if need_try_again {
-            // A thread gamepad_listener precisa de um tempo para ler o mutex novamente
+            // A thread gamepad_listener precisará de tempo para ler o mutex novamente.
             sleep(Duration::from_millis(EVENT_THREAD_SLEEP_TIME));
             return Err(need_try_again);
         }
@@ -96,7 +96,7 @@ impl EventThread {
     /// notificada sobre os eventos de input.
     ///
     /// Aviso: para evitar uso desnecessário de CPU use isso somente quando não hover uma
-    /// *rom* em execução!. Use o terceiro parâmetro "event_thread_is_enabled" para encerar a
+    /// *rom* em execução! Use o terceiro parâmetro 'event-thread-is-enabled' para encerar a
     /// execução da thread quando não precisar mais dela.
     fn create_update_devices_state_thread(
         &mut self,

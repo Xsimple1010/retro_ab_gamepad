@@ -1,11 +1,10 @@
-use std::sync::{Arc, Mutex};
-
 use super::{
     gamepad_key_map::GamepadKeyMap,
     update_gamepad_state_handle::{connect_handle, disconnect_handle, pressed_button_handle},
 };
 use crate::devices_manager::{DeviceStateListener, DevicesRequireFunctions};
 use gilrs::{Event, GamepadId, Gilrs};
+use std::sync::{Arc, Mutex};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -55,10 +54,7 @@ impl RetroGamePad {
     ) {
         let gilrs = &mut *gilrs_instance.lock().unwrap();
 
-        while let Some(Event {
-            id, event, time: _, ..
-        }) = gilrs.next_event()
-        {
+        while let Some(Event { id, event, .. }) = gilrs.next_event() {
             match event {
                 gilrs::EventType::Connected => {
                     connect_handle(id, gilrs, &connected_gamepads, &max_ports, &listener);

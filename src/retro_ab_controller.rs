@@ -36,9 +36,14 @@ impl RetroAbController {
         Ok(Self { event_thread })
     }
 
-    // #[doc = "retorna uma lista de gamepad disponíveis"]
-    // pub fn get_list(&self) -> Arc<Mutex<Vec<RetroGamePad>>> {
-    // }
+    #[doc = "retorna uma lista de gamepad disponíveis"]
+    pub fn get_list(&self) -> Vec<RetroGamePad> {
+        DEVICES_MANAGER.lock().unwrap().get_gamepads()
+    }
+
+    pub fn set_max_port(max: usize) {
+        DEVICES_MANAGER.lock().unwrap().set_max_port(max);
+    }
 
     #[doc = "Para que o CORE possa 'tomar posse' com existo dos eventos do gamepad é necessário interromper o a thread de eventos"]
     pub fn stop_thread_events(&mut self) {
