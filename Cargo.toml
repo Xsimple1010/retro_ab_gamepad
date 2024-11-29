@@ -1,4 +1,3 @@
-workspace = { members = ["example"] }
 [package]
 name = "retro_ab_gamepad"
 version = "0.1.0"
@@ -6,21 +5,12 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+#[lints]
+#workspace = true
+
 [dependencies]
-gilrs = "0.11.0"
-lazy_static = "1.5.0"
-retro_ab = { git = "https://github.com/Xsimple1010/retro_ab_rs.git" }
-pc-keyboard = "0.8.0"
-
-[dependencies.uuid]
-version = "1.11.0"
-features = [
-    "v4", # Lets you generate random UUIDs
-]
-
-[dev-dependencies]
-retro_ab_av = { git = "https://github.com/Xsimple1010/retro_ab_av.git" }
-
-[[example]]
-name = "example"
-path = "example/src/main.rs"
+lazy_static.workspace = true
+pc-keyboard.workspace = true
+gilrs.workspace = true
+retro_ab.workspace = true
+uuid.workspace = true
